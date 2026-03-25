@@ -115,14 +115,20 @@ function RangeInput({ label, value, onChange, min, max, step = 1, helper }) {
   );
 }
 
-function CheckboxInput({ label, checked, onChange, helper }) {
+function CheckboxInput({ label, checked, onChange, helper, disabled = false }) {
   return (
-    <label className="block rounded-2xl border border-slate-200 p-4">
+    <label className={`block rounded-2xl border border-slate-200 p-4 ${disabled ? "bg-slate-100" : ""}`}>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-slate-800">{label}</span>
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />
+        <span className={`text-sm font-medium ${disabled ? "text-slate-500" : "text-slate-800"}`}>{label}</span>
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4"
+        />
       </div>
-      {helper ? <div className="mt-2 text-xs text-slate-500">{helper}</div> : null}
+      {helper ? <div className={`mt-2 text-xs ${disabled ? "text-slate-400" : "text-slate-500"}`}>{helper}</div> : null}
     </label>
   );
 }
@@ -158,6 +164,13 @@ export default function DynamaxProductionScenarioTool() {
   const [dailyGoalLF, setDailyGoalLF] = useState(10792);
   const [practicalAvailableHoursTarget, setPracticalAvailableHoursTarget] = useState(14);
 
+  const handleLayoutChange = (value) => {
+    setLayout(value);
+    if (value === "current") {
+      setDoubleBlade(false);
+    }
+  };
+
   const preset = basePresets[product][layout];
 
   const baseValues = useMemo(() => {
@@ -183,7 +196,7 @@ export default function DynamaxProductionScenarioTool() {
       nextCycleMinutes = Math.max(0.5, nextCycleMinutes - 1);
     }
 
-    if (doubleBlade) {
+    if (doubleBlade && layout === "nested") {
       nextCycleMinutes = Math.max(0.5, nextCycleMinutes - 3);
     }
 
@@ -193,7 +206,7 @@ export default function DynamaxProductionScenarioTool() {
       fixturesPerCycle: baseValues.fixturesPerCycle,
       cycleMinutes: nextCycleMinutes,
     };
-  }, [baseValues, removeCrossCut, doubleBlade]);
+  }, [baseValues, removeCrossCut, doubleBlade, layout]);
 
   const calculations = useMemo(() => {
     const workingDaysPerYear = Math.max(1, workingWeeks * daysPerWeek - holidays);
@@ -304,7 +317,7 @@ export default function DynamaxProductionScenarioTool() {
             <div className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Scenario Planner</div>
             <h1 className="text-3xl font-semibold tracking-tight">Dynamax CNC Production Projection Tool</h1>
             <p className="mt-2 max-w-4xl text-sm text-slate-600">
-              This version avoids the preview bundling issue and uses only standard React and HTML inputs.
+              Adjust the inputs to compare production scenarios, staffing needs, and projected linear feet by shift, day, and year.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-sm">
@@ -340,7 +353,7 @@ export default function DynamaxProductionScenarioTool() {
                 <SelectInput
                   label="Base Layout"
                   value={layout}
-                  onChange={setLayout}
+                  onChange={handleLayoutChange}
                   options={[
                     { value: "current", label: "Current" },
                     { value: "nested", label: "Nested" },
@@ -357,8 +370,9 @@ export default function DynamaxProductionScenarioTool() {
                   <CheckboxInput
                     label="Double Blade"
                     checked={doubleBlade}
+                    disabled={layout === "current"}
                     onChange={setDoubleBlade}
-                    helper="Combines 4 passes into 2 and removes about 3 minutes of cycle time."
+                    helper={layout === "current" ? "Double blade is only available with nested layout." : "Combines 4 passes into 2 and removes about 3 minutes of cycle time."}
                   />
                 </div>
 
@@ -492,18 +506,6 @@ export default function DynamaxProductionScenarioTool() {
                 <DetailBox label="Lunch + Break Hrs / Day" value={fmt1.format(calculations.lunchHoursPerDay + calculations.breakHoursPerDay)} helper="Only reduces coverage when staffing is below target" />
                 <DetailBox label="Covered Hours / Day" value={fmt1.format(calculations.coverageHoursPerDay)} helper="Before downtime and utilization" />
                 <DetailBox label="Productive Hours / Day" value={fmt1.format(calculations.productiveHoursPerDay)} helper="After downtime and attainable utilization" />
-              </div>
-            </Card>
-
-            <Card title="Formula Logic in this Version">
-              <div className="space-y-2 text-sm text-slate-600">
-                <div>1. Base layout comes from your screenshot values for Lite, Regular, and Plus in Current or Nested mode.</div>
-                <div>2. Removing cross cut doubles pieces per fixture when possible and removes about 1 minute from cycle time.</div>
-                <div>3. Double blade removes about 3 minutes from cycle time.</div>
-                <div>4. Required headcount scales from 2 at 50% utilization to 3 at 100% utilization.</div>
-                <div>5. If staffing is short, attainable table utilization is reduced automatically.</div>
-                <div>6. Downtime is applied as a single percent loss.</div>
-                <div>7. Required overtime per week is calculated from the remaining hours gap to hit the annual target.</div>
               </div>
             </Card>
           </div>
