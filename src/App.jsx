@@ -1,17 +1,23 @@
 import React, { useMemo, useState } from "react";
 
-const basePresets = {
+const presets = {
   Lite: {
     current: { lfPerPiece: 4, piecesPerFixture: 4, fixturesPerCycle: 10, cycleMinutes: 9 + 4 / 60 },
     nested: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 11 + 42 / 60 },
+    doubleBlade: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 8 + 23 / 60 },
+    nestedNoEndCut: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 4 + 9 / 60 },
   },
   Regular: {
     current: { lfPerPiece: 4, piecesPerFixture: 4, fixturesPerCycle: 10, cycleMinutes: 11 + 5 / 60 },
     nested: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 14 + 19 / 60 },
+    doubleBlade: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 10 + 30 / 60 },
+    nestedNoEndCut: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 5 + 21 / 60 },
   },
   Plus: {
     current: { lfPerPiece: 4, piecesPerFixture: 4, fixturesPerCycle: 10, cycleMinutes: 11 + 5 / 60 },
     nested: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 14 + 19 / 60 },
+    doubleBlade: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 10 + 30 / 60 },
+    nestedNoEndCut: { lfPerPiece: 4, piecesPerFixture: 8, fixturesPerCycle: 10, cycleMinutes: 5 + 21 / 60 },
   },
 };
 
@@ -30,10 +36,10 @@ function formatClock(minutesDecimal) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function Card({ title, children }) {
+function Card({ title, children, blue = false }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      {title ? <h3 className="mb-4 text-lg font-semibold text-slate-900">{title}</h3> : null}
+    <div className={`rounded-2xl border p-5 shadow-sm ${blue ? "border-sky-200 bg-sky-50" : "border-slate-200 bg-white"}`}>
+      {title ? <h3 className={`mb-4 text-lg font-semibold ${blue ? "text-sky-950" : "text-slate-900"}`}>{title}</h3> : null}
       {children}
     </div>
   );
@@ -41,8 +47,8 @@ function Card({ title, children }) {
 
 function MetricCard({ title, value, subtitle }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="text-sm text-slate-500">{title}</div>
+    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
+      <div className="text-sm text-sky-700">{title}</div>
       <div className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{value}</div>
       {subtitle ? <div className="mt-1 text-sm text-slate-500">{subtitle}</div> : null}
     </div>
@@ -51,7 +57,7 @@ function MetricCard({ title, value, subtitle }) {
 
 function DetailBox({ label, value, helper }) {
   return (
-    <div className="rounded-2xl border border-slate-200 p-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="text-sm text-slate-500">{label}</div>
       <div className="mt-1 text-xl font-semibold text-slate-900">{value}</div>
       {helper ? <div className="mt-1 text-xs text-slate-500">{helper}</div> : null}
@@ -69,7 +75,7 @@ function NumberInput({ label, value, onChange, step = 1, disabled = false }) {
         step={step}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-slate-500 disabled:bg-slate-100"
+        className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 disabled:bg-slate-100"
       />
     </label>
   );
@@ -82,7 +88,7 @@ function SelectInput({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-500"
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -94,12 +100,12 @@ function SelectInput({ label, value, onChange, options }) {
   );
 }
 
-function RangeInput({ label, value, onChange, min, max, step = 1, helper }) {
+function RangeInput({ label, value, onChange, min, max, step = 1, helper, suffix = "" }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-slate-700">{label}</span>
-        <span className="text-sm font-semibold text-slate-900">{value}</span>
+        <span className="text-sm font-semibold text-sky-900">{value}{suffix}</span>
       </div>
       <input
         type="range"
@@ -108,43 +114,22 @@ function RangeInput({ label, value, onChange, min, max, step = 1, helper }) {
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full"
+        className="w-full accent-sky-600"
       />
       {helper ? <div className="text-xs text-slate-500">{helper}</div> : null}
     </div>
   );
 }
 
-function CheckboxInput({ label, checked, onChange, helper, disabled = false }) {
-  return (
-    <label className={`block rounded-2xl border border-slate-200 p-4 ${disabled ? "bg-slate-100" : ""}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className={`text-sm font-medium ${disabled ? "text-slate-500" : "text-slate-800"}`}>{label}</span>
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.checked)}
-          className="h-4 w-4"
-        />
-      </div>
-      {helper ? <div className={`mt-2 text-xs ${disabled ? "text-slate-400" : "text-slate-500"}`}>{helper}</div> : null}
-    </label>
-  );
-}
-
 export default function DynamaxProductionScenarioTool() {
   const [product, setProduct] = useState("Lite");
-  const [layout, setLayout] = useState("current");
+  const [processMode, setProcessMode] = useState("current");
   const [manualOverride, setManualOverride] = useState(false);
 
   const [lfPerPiece, setLfPerPiece] = useState(4);
   const [piecesPerFixture, setPiecesPerFixture] = useState(4);
   const [fixturesPerCycle, setFixturesPerCycle] = useState(10);
   const [cycleMinutes, setCycleMinutes] = useState(9 + 4 / 60);
-
-  const [removeCrossCut, setRemoveCrossCut] = useState(false);
-  const [doubleBlade, setDoubleBlade] = useState(false);
 
   const [tableUtilizationPct, setTableUtilizationPct] = useState(50);
   const [downtimePct, setDowntimePct] = useState(10);
@@ -164,16 +149,9 @@ export default function DynamaxProductionScenarioTool() {
   const [dailyGoalLF, setDailyGoalLF] = useState(10792);
   const [practicalAvailableHoursTarget, setPracticalAvailableHoursTarget] = useState(14);
 
-  const handleLayoutChange = (value) => {
-    setLayout(value);
-    if (value === "current") {
-      setDoubleBlade(false);
-    }
-  };
+  const selectedPreset = presets[product][processMode];
 
-  const preset = basePresets[product][layout];
-
-  const baseValues = useMemo(() => {
+  const scenarioValues = useMemo(() => {
     if (manualOverride) {
       return {
         lfPerPiece,
@@ -182,31 +160,8 @@ export default function DynamaxProductionScenarioTool() {
         cycleMinutes,
       };
     }
-    return preset;
-  }, [manualOverride, lfPerPiece, piecesPerFixture, fixturesPerCycle, cycleMinutes, preset]);
-
-  const scenarioValues = useMemo(() => {
-    let nextPiecesPerFixture = baseValues.piecesPerFixture;
-    let nextCycleMinutes = baseValues.cycleMinutes;
-
-    if (removeCrossCut) {
-      if (nextPiecesPerFixture < 8) {
-        nextPiecesPerFixture = nextPiecesPerFixture * 2;
-      }
-      nextCycleMinutes = Math.max(0.5, nextCycleMinutes - 1);
-    }
-
-    if (doubleBlade && layout === "nested") {
-      nextCycleMinutes = Math.max(0.5, nextCycleMinutes - 3);
-    }
-
-    return {
-      lfPerPiece: baseValues.lfPerPiece,
-      piecesPerFixture: nextPiecesPerFixture,
-      fixturesPerCycle: baseValues.fixturesPerCycle,
-      cycleMinutes: nextCycleMinutes,
-    };
-  }, [baseValues, removeCrossCut, doubleBlade, layout]);
+    return selectedPreset;
+  }, [manualOverride, lfPerPiece, piecesPerFixture, fixturesPerCycle, cycleMinutes, selectedPreset]);
 
   const calculations = useMemo(() => {
     const workingDaysPerYear = Math.max(1, workingWeeks * daysPerWeek - holidays);
@@ -309,35 +264,43 @@ export default function DynamaxProductionScenarioTool() {
   const dailyTargetMet = calculations.lfPerDay >= dailyGoalLF;
   const staffingWarning = headcount < calculations.requiredHeadcountForUtil;
 
+  const processModeLabel = {
+    current: "Current",
+    nested: "Nested",
+    doubleBlade: "Double Blade",
+    nestedNoEndCut: "Nested / No End Cut",
+  }[processMode];
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-slate-50 to-white p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Scenario Planner</div>
-            <h1 className="text-3xl font-semibold tracking-tight">Dynamax CNC Production Projection Tool</h1>
-            <p className="mt-2 max-w-4xl text-sm text-slate-600">
-              Adjust the inputs to compare production scenarios, staffing needs, and projected linear feet by shift, day, and year.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-sm">
-            <span className="rounded-full bg-slate-900 px-3 py-1 text-white">{product}</span>
-            <span className="rounded-full bg-slate-200 px-3 py-1 text-slate-800">{layout === "current" ? "Current Layout" : "Nested Layout"}</span>
-            {removeCrossCut ? <span className="rounded-full border border-slate-300 px-3 py-1">No Cross Cut</span> : null}
-            {doubleBlade ? <span className="rounded-full border border-slate-300 px-3 py-1">Double Blade</span> : null}
+        <div className="rounded-3xl border border-sky-200 bg-white/90 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="text-sm font-medium uppercase tracking-[0.2em] text-sky-700">Scenario Planner</div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">WAVE ALP Dynamax CNC Production Projection Tool</h1>
+              <p className="mt-2 max-w-4xl text-sm text-slate-600">
+                Adjust the inputs to compare production scenarios, staffing needs, and projected linear feet by shift, day, and year.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="rounded-full bg-sky-700 px-3 py-1 text-white">{product}</span>
+              <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-900">{processModeLabel}</span>
+              <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-slate-700">Headcount: {headcount}</span>
+            </div>
           </div>
         </div>
 
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
-          <div className="font-semibold">Rules in this version</div>
+          <div className="font-semibold">Capacity logic in this version</div>
           <div className="mt-1">
-            Table utilization is treated as layout usage on the table. Going from 50% to 100% increases required headcount from 2 to 3. Downtime is applied as a single loss percentage.
+            Process modes now use the exact preset values from your production table: Current, Nested, Double Blade, and Nested / No End Cut.
           </div>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[390px,1fr]">
           <div className="space-y-6">
-            <Card title="Process Inputs">
+            <Card title="Process Inputs" blue={true}>
               <div className="space-y-4">
                 <SelectInput
                   label="Product Family"
@@ -351,43 +314,30 @@ export default function DynamaxProductionScenarioTool() {
                 />
 
                 <SelectInput
-                  label="Base Layout"
-                  value={layout}
-                  onChange={handleLayoutChange}
+                  label="Process Mode"
+                  value={processMode}
+                  onChange={setProcessMode}
                   options={[
                     { value: "current", label: "Current" },
                     { value: "nested", label: "Nested" },
+                    { value: "doubleBlade", label: "Double Blade" },
+                    { value: "nestedNoEndCut", label: "Nested / No End Cut" },
                   ]}
                 />
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <CheckboxInput
-                    label="Remove Cross Cut"
-                    checked={removeCrossCut}
-                    onChange={setRemoveCrossCut}
-                    helper="Doubles pieces per fixture when possible and removes about 1 minute of cycle time."
-                  />
-                  <CheckboxInput
-                    label="Double Blade"
-                    checked={doubleBlade}
-                    disabled={layout === "current"}
-                    onChange={setDoubleBlade}
-                    helper={layout === "current" ? "Double blade is only available with nested layout." : "Combines 4 passes into 2 and removes about 3 minutes of cycle time."}
-                  />
-                </div>
-
-                <CheckboxInput
-                  label="Manual Override"
-                  checked={manualOverride}
-                  onChange={setManualOverride}
-                  helper="Turn this on to use your own LF per piece, fixtures, and cycle time."
-                />
+                <label className="block rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-800">Manual Override</span>
+                    <input type="checkbox" checked={manualOverride} onChange={(e) => setManualOverride(e.target.checked)} className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">Turn this on to use your own LF per piece, fixture count, and cycle time.</div>
+                </label>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <NumberInput label="LF per Piece" value={manualOverride ? lfPerPiece : baseValues.lfPerPiece} onChange={setLfPerPiece} disabled={!manualOverride} />
-                  <NumberInput label="Pieces per Fixture" value={manualOverride ? piecesPerFixture : baseValues.piecesPerFixture} onChange={setPiecesPerFixture} disabled={!manualOverride} />
-                  <NumberInput label="Fixtures per Cycle" value={manualOverride ? fixturesPerCycle : baseValues.fixturesPerCycle} onChange={setFixturesPerCycle} disabled={!manualOverride} />
-                  <NumberInput label="Base Cycle Time (min)" value={manualOverride ? round(cycleMinutes, 2) : round(baseValues.cycleMinutes, 2)} onChange={setCycleMinutes} step={0.01} disabled={!manualOverride} />
+                  <NumberInput label="LF per Piece" value={manualOverride ? lfPerPiece : scenarioValues.lfPerPiece} onChange={setLfPerPiece} disabled={!manualOverride} />
+                  <NumberInput label="Pieces per Fixture" value={manualOverride ? piecesPerFixture : scenarioValues.piecesPerFixture} onChange={setPiecesPerFixture} disabled={!manualOverride} />
+                  <NumberInput label="Fixtures per Cycle" value={manualOverride ? fixturesPerCycle : scenarioValues.fixturesPerCycle} onChange={setFixturesPerCycle} disabled={!manualOverride} />
+                  <NumberInput label="Cycle Time (min)" value={manualOverride ? round(cycleMinutes, 2) : round(scenarioValues.cycleMinutes, 2)} onChange={setCycleMinutes} step={0.01} disabled={!manualOverride} />
                 </div>
               </div>
             </Card>
@@ -423,24 +373,26 @@ export default function DynamaxProductionScenarioTool() {
               </div>
             </Card>
 
-            <Card title="Utilization & Losses">
+            <Card title="Utilization & Losses" blue={true}>
               <div className="space-y-6">
                 <RangeInput
-                  label="Requested Table Utilization %"
+                  label="Requested Table Utilization"
                   value={tableUtilizationPct}
                   onChange={setTableUtilizationPct}
                   min={50}
                   max={100}
                   step={5}
+                  suffix="%"
                   helper="50% needs 2 heads. 100% needs 3 heads."
                 />
                 <RangeInput
-                  label="Downtime %"
+                  label="Downtime"
                   value={downtimePct}
                   onChange={setDowntimePct}
                   min={0}
                   max={30}
                   step={1}
+                  suffix="%"
                   helper="Routine daily losses are treated as already baked in here."
                 />
               </div>
@@ -449,7 +401,7 @@ export default function DynamaxProductionScenarioTool() {
 
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard title="LF per Cycle" value={fmt0.format(round(calculations.lfPerCycle, 0))} subtitle={`${formatClock(scenarioValues.cycleMinutes)} effective cycle`} />
+              <MetricCard title="LF per Cycle" value={fmt0.format(round(calculations.lfPerCycle, 0))} subtitle={`${formatClock(scenarioValues.cycleMinutes)} cycle time`} />
               <MetricCard title="LF per Hour" value={fmt0.format(round(calculations.lfPerHour, 0))} subtitle={`${fmt1.format(calculations.cyclesPerHour)} cycles/hour`} />
               <MetricCard title="LF per Shift" value={fmt0.format(round(calculations.lfPerShift, 0))} subtitle={`${dailyTargetMet ? "On pace for" : "Below"} ${fmt0.format(dailyGoalLF)} daily goal`} />
               <MetricCard title="Annual LF" value={fmt0.format(round(calculations.annualLF, 0))} subtitle={`${fmt1.format(calculations.annualAttainmentPct)}% of annual goal`} />
@@ -477,7 +429,7 @@ export default function DynamaxProductionScenarioTool() {
               </Card>
             </div>
 
-            <Card title="Target Check">
+            <Card title="Target Check" blue={true}>
               <div className={`rounded-2xl p-5 ${annualTargetMet ? "bg-emerald-50" : "bg-rose-50"}`}>
                 <div className="text-sm text-slate-500">Annual Goal vs Projection</div>
                 <div className="mt-1 text-3xl font-semibold tracking-tight">{fmt0.format(targetAnnualLF)} LF target</div>
@@ -495,7 +447,7 @@ export default function DynamaxProductionScenarioTool() {
 
             <Card title="Staffing and Utilization Logic">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <DetailBox label="Staffing Status" value={calculations.staffingStatus} helper={`Minimum 2 | Target 3`} />
+                <DetailBox label="Staffing Status" value={calculations.staffingStatus} helper="Minimum 2 | Target 3" />
                 <DetailBox label="Required Headcount" value={fmt1.format(calculations.requiredHeadcountForUtil)} helper="For requested table utilization" />
                 <DetailBox label="Requested Table Utilization" value={`${tableUtilizationPct}%`} />
                 <DetailBox label="Attainable Table Utilization" value={`${fmt1.format(calculations.attainableTableUtilizationPct)}%`} helper={staffingWarning ? "Reduced because staffing is below requirement" : "Supported by current staffing"} />
