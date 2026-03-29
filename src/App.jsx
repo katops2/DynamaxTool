@@ -295,17 +295,17 @@ export default function DynamaxProductionScenarioTool() {
             <Card title="Scenario Planning Inputs">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormattedNumberInput label="Operating Days / Year" value={operatingDaysPerYear} onChange={setOperatingDaysPerYear} />
+                <FormattedNumberInput label="Headcount" value={headcount} onChange={setHeadcount} />
                 <SelectInput
-                  label="Headcount"
-                  value={String(headcount)}
-                  onChange={(value) => setHeadcount(Number(value))}
+                  label="Shifts / Day"
+                  value={String(shiftsPerDay)}
+                  onChange={(value) => setShiftsPerDay(Number(value))}
                   options={[
                     { value: "1", label: "1" },
                     { value: "2", label: "2" },
                     { value: "3", label: "3" },
                   ]}
                 />
-                <FormattedNumberInput label="Shifts / Day" value={shiftsPerDay} onChange={setShiftsPerDay} />
                 <FormattedNumberInput label="Hours / Shift" value={hoursPerShift} onChange={setHoursPerShift} decimals={2} />
                 <SelectInput
                   label="Overtime / Week"
@@ -350,7 +350,7 @@ export default function DynamaxProductionScenarioTool() {
                   helper="10% is neutral because the production sheet rates already reflect about that level."
                 />
                 <div className="rounded-2xl border border-sky-200 bg-white p-4 text-sm text-slate-600">
-                  Required headcount at the selected utilization is <span className="font-semibold text-slate-900">{fmt1.format(results.requiredHeadcount)}</span>. Selected headcount is <span className="font-semibold text-slate-900">{fmt0.format(headcount)}</span>. Projected runtime is <span className="font-semibold text-slate-900">{fmt2.format(results.projectedRunHoursPerDay)}</span> hours/day from <span className="font-semibold text-slate-900">{fmt2.format(results.scheduledHoursPerDay)}</span> sche
+                  Required headcount at the selected utilization is <span className="font-semibold text-slate-900">{fmt1.format(results.requiredHeadcount)}</span>. Selected headcount is <span className="font-semibold text-slate-900">{fmt0.format(headcount)}</span>. Projected runtime is <span className="font-semibold text-slate-900">{fmt2.format(results.projectedRunHoursPerDay)}</span> hours/day from <span className="font-semibold text-slate-900">{fmt2.format(results.scheduledHoursPerDay)}</span> scheduled hours/day.
                 </div>
               </div>
             </Card>
