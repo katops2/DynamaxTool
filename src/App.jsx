@@ -167,13 +167,7 @@ export default function DynamaxProductionScenarioTool() {
   const [annualGoalLF, setAnnualGoalLF] = useState(2500000);
   const [lastYearLF, setLastYearLF] = useState(1594213);
 
-  const syncHeadcountToUtilization = (utilization) => {
-    const required = 2 + Math.max(0, (utilization - 50) / 50);
-    setTableUtilizationPct(utilization);
-    setHeadcount(Number(required.toFixed(1)));
-  };
-
-  const selectedPreset = presets[product][processMode];
+    const selectedPreset = presets[product][processMode];
 
   const results = useMemo(() => {
     const actualCurrentDailyLF = ACTUAL_YTD_WORKING_DAYS > 0 ? ACTUAL_YTD_LF / ACTUAL_YTD_WORKING_DAYS : 0;
@@ -259,7 +253,7 @@ export default function DynamaxProductionScenarioTool() {
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="rounded-full bg-sky-700 px-3 py-1 text-white">{product}</span>
               <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-900">{processModeLabel}</span>
-              <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-slate-700">Required Headcount: {fmt1.format(headcount)}</span>
+              <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-slate-700">Headcount: {fmt0.format(headcount)}</span>
             </div>
           </div>
         </div>
@@ -301,7 +295,16 @@ export default function DynamaxProductionScenarioTool() {
             <Card title="Scenario Planning Inputs">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormattedNumberInput label="Operating Days / Year" value={operatingDaysPerYear} onChange={setOperatingDaysPerYear} />
-                <DetailBox label="Required Headcount" value={fmt1.format(headcount)} helper="Auto-updates from table utilization" />
+                <SelectInput
+                  label="Headcount"
+                  value={String(headcount)}
+                  onChange={(value) => setHeadcount(Number(value))}
+                  options={[
+                    { value: "1", label: "1" },
+                    { value: "2", label: "2" },
+                    { value: "3", label: "3" },
+                  ]}
+                />
                 <FormattedNumberInput label="Shifts / Day" value={shiftsPerDay} onChange={setShiftsPerDay} />
                 <FormattedNumberInput label="Hours / Shift" value={hoursPerShift} onChange={setHoursPerShift} decimals={2} />
                 <SelectInput
@@ -329,7 +332,7 @@ export default function DynamaxProductionScenarioTool() {
                 <RangeInput
                   label="Table Utilization"
                   value={tableUtilizationPct}
-                  onChange={syncHeadcountToUtilization}
+                  onChange={setTableUtilizationPct}
                   min={50}
                   max={100}
                   step={5}
@@ -347,7 +350,7 @@ export default function DynamaxProductionScenarioTool() {
                   helper="10% is neutral because the production sheet rates already reflect about that level."
                 />
                 <div className="rounded-2xl border border-sky-200 bg-white p-4 text-sm text-slate-600">
-                  Required headcount at the selected utilization is <span className="font-semibold text-slate-900">{fmt1.format(results.requiredHeadcount)}</span>. Projected runtime is <span className="font-semibold text-slate-900">{fmt2.format(results.projectedRunHoursPerDay)}</span> hours/day from <span className="font-semibold text-slate-900">{fmt2.format(results.scheduledHoursPerDay)}</span> scheduled hours/day.
+                  Required headcount at the selected utilization is <span className="font-semibold text-slate-900">{fmt1.format(results.requiredHeadcount)}</span>. Selected headcount is <span className="font-semibold text-slate-900">{fmt0.format(headcount)}</span>. Projected runtime is <span className="font-semibold text-slate-900">{fmt2.format(results.projectedRunHoursPerDay)}</span> hours/day from <span className="font-semibold text-slate-900">{fmt2.format(results.scheduledHoursPerDay)}</span> sche
                 </div>
               </div>
             </Card>
