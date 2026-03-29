@@ -162,7 +162,7 @@ export default function DynamaxProductionScenarioTool() {
   const [shiftsPerDay, setShiftsPerDay] = useState(2);
   const [hoursPerShift, setHoursPerShift] = useState(8);
   const [overtimeHoursPerWeek, setOvertimeHoursPerWeek] = useState("0");
-  const [operatingDaysPerYear, setOperatingDaysPerYear] = useState(211);
+  const [operatingDaysPerYear, setOperatingDaysPerYear] = useState(191);
   const [dailyGoalLF, setDailyGoalLF] = useState(10792);
   const [annualGoalLF, setAnnualGoalLF] = useState(2500000);
   const [lastYearLF, setLastYearLF] = useState(1594213);
@@ -294,7 +294,7 @@ export default function DynamaxProductionScenarioTool() {
 
             <Card title="Scenario Planning Inputs">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormattedNumberInput label="Operating Days / Year" value={operatingDaysPerYear} onChange={setOperatingDaysPerYear} />
+                <FormattedNumberInput label="Remaining Operating Days" value={operatingDaysPerYear} onChange={setOperatingDaysPerYear} />
                 <FormattedNumberInput label="Headcount" value={headcount} onChange={setHeadcount} />
                 <SelectInput
                   label="Shifts / Day"
@@ -343,8 +343,8 @@ export default function DynamaxProductionScenarioTool() {
                   label="Projected Downtime"
                   value={projectedDowntimePct}
                   onChange={setProjectedDowntimePct}
-                  min={0}
-                  max={30}
+                  min={5}
+                  max={60}
                   step={1}
                   suffix="%"
                   helper="10% is neutral because the production sheet rates already reflect about that level."
