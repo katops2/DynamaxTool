@@ -135,11 +135,17 @@ export default function DynamaxProductionScenarioTool() {
   const [dailyGoalLF, setDailyGoalLF] = useState(10792);
   const [annualGoalLF, setAnnualGoalLF] = useState(2500000);
   const [lastYearLF, setLastYearLF] = useState(1594213);
+  const [ytdActualLF, setYtdActualLF] = useState(302720);
+  const [ytdWorkingDays, setYtdWorkingDays] = useState(71);
+  const [actualDowntimePct, setActualDowntimePct] = useState(45);
 
   const selectedPreset = presets[product][processMode];
-  const currentPreset = presets[product].current;
 
   const results = useMemo(() => {
+    const actualCurrentDailyLF = ytdWorkingDays > 0 ? ytdActualLF / ytdWorkingDays : 0;
+    const actualCurrentAnnualLF = actualCurrentDailyLF * operatingDaysPerYear;
+    const actualCurrentLfPerHour = runHoursPerDay > 0 ? actualCurrentDailyLF / runHoursPerDay : 0;
+
     const overtimePerDay = Number(overtimeHoursPerWeek) / 5;
     const effectiveRunHoursPerDay = runHoursPerDay + overtimePerDay;
     const utilizationFactor = tableUtilizationPct / 100;
@@ -147,37 +153,30 @@ export default function DynamaxProductionScenarioTool() {
     const requiredHeadcount = 2 + ((tableUtilizationPct - 50) / 50);
     const staffingFactor = clamp(headcount / requiredHeadcount, 0, 1);
 
-    const project = (preset) => {
-      const adjustedLfPerHour = preset.lfPerHour * utilizationFactor * downtimeFactor * staffingFactor;
-      const adjustedLfPerDay = adjustedLfPerHour * effectiveRunHoursPerDay;
-      const adjustedAnnualLF = adjustedLfPerDay * operatingDaysPerYear;
-      return {
-        adjustedLfPerHour,
-        adjustedLfPerDay,
-        adjustedAnnualLF,
-      };
-    };
-
-    const selectedScenario = project(selectedPreset);
-    const currentScenario = project(currentPreset);
+    const adjustedLfPerHour = selectedPreset.lfPerHour * utilizationFactor * downtimeFactor * staffingFactor;
+    const adjustedLfPerDay = adjustedLfPerHour * effectiveRunHoursPerDay;
+    const adjustedAnnualLF = adjustedLfPerDay * operatingDaysPerYear;
 
     return {
+      actualCurrentDailyLF,
+      actualCurrentAnnualLF,
+      actualCurrentLfPerHour,
       overtimePerDay,
       effectiveRunHoursPerDay,
       requiredHeadcount,
       staffingFactor,
-      selectedScenario,
-      currentScenario,
-      improvementVsCurrentPerDay: selectedScenario.adjustedLfPerDay - currentScenario.adjustedLfPerDay,
-      improvementVsCurrentPerYear: selectedScenario.adjustedAnnualLF - currentScenario.adjustedAnnualLF,
-      gapToDailyGoal: selectedScenario.adjustedLfPerDay - dailyGoalLF,
-      gapToAnnualGoal: selectedScenario.adjustedAnnualLF - annualGoalLF,
-      gapToLastYear: selectedScenario.adjustedAnnualLF - lastYearLF,
-      annualVsLastYearPct: lastYearLF > 0 ? (selectedScenario.adjustedAnnualLF / lastYearLF) * 100 : 0,
+      adjustedLfPerHour,
+      adjustedLfPerDay,
+      adjustedAnnualLF,
+      improvementVsActualPerDay: adjustedLfPerDay - actualCurrentDailyLF,
+      improvementVsActualPerYear: adjustedAnnualLF - actualCurrentAnnualLF,
+      gapToDailyGoal: adjustedLfPerDay - dailyGoalLF,
+      gapToAnnualGoal: adjustedAnnualLF - annualGoalLF,
+      gapToLastYear: adjustedAnnualLF - lastYearLF,
+      annualVsLastYearPct: lastYearLF > 0 ? (adjustedAnnualLF / lastYearLF) * 100 : 0,
     };
   }, [
     selectedPreset,
-    currentPreset,
     tableUtilizationPct,
     downtimePct,
     headcount,
@@ -187,6 +186,8 @@ export default function DynamaxProductionScenarioTool() {
     dailyGoalLF,
     annualGoalLF,
     lastYearLF,
+    ytdActualLF,
+    ytdWorkingDays,
   ]);
 
   const processModeLabel = {
@@ -207,7 +208,7 @@ export default function DynamaxProductionScenarioTool() {
                 <div className="text-sm font-medium uppercase tracking-[0.2em] text-sky-700">Executive Scenario Planner</div>
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-900">WAVE ALP Dynamax CNC Production Projection Tool</h1>
                 <p className="mt-2 max-w-4xl text-sm text-slate-600">
-                  Built from the provided production sheets using exact preset LF per hour and LF per day values for each process mode, then scaled with scenario inputs for utilization, downtime, runtime, and staffing.
+                  This version separates actual 2026 performance from validated process capacity so leadership can see where production is today, what the process can do at roughly 10% downtime, and what each scenario could produce.
                 </p>
               </div>
             </div>
@@ -221,7 +222,22 @@ export default function DynamaxProductionScenarioTool() {
 
         <div className="grid gap-6 xl:grid-cols-[390px,1fr]">
           <div className="space-y-6">
-            <Card title="Validated Process Presets" blue={true}>
+            <Card title="Actual 2026 Performance" blue={true}>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <NumberInput label="YTD Actual LF" value={ytdActualLF} onChange={setYtdActualLF} />
+                <NumberInput label="YTD Working Days" value={ytdWorkingDays} onChange={setYtdWorkingDays} />
+                <NumberInput label="Actual Downtime %" value={actualDowntimePct} onChange={setActualDowntimePct} />
+                <NumberInput label="Run Hours / Day" value={runHoursPerDay} onChange={setRunHoursPerDay} step={0.25} />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <DetailBox label="Actual LF / Day" value={fmt0.format(results.actualCurrentDailyLF)} helper="YTD actual divided by working days" />
+                <DetailBox label="Actual LF / Hour" value={fmt1.format(results.actualCurrentLfPerHour)} helper="Based on current runtime hours/day" />
+                <DetailBox label="Annualized Current Pace" value={fmt0.format(results.actualCurrentAnnualLF)} helper={`${fmt0.format(operatingDaysPerYear)} operating days/year`} />
+                <DetailBox label="Current Downtime" value={`${fmt0.format(actualDowntimePct)}%`} helper="Real-world condition today" />
+              </div>
+            </Card>
+
+            <Card title="Validated Process Capacity" blue={true}>
               <div className="space-y-4">
                 <SelectInput
                   label="Product Family"
@@ -248,18 +264,17 @@ export default function DynamaxProductionScenarioTool() {
                   <DetailBox label="LF / Cycle" value={fmt0.format(selectedPreset.lfPerCycle)} helper="Exact sheet value" />
                   <DetailBox label="Cycle Time" value={formatClock(selectedPreset.cycleMinutes)} helper="Exact sheet value" />
                   <DetailBox label="Cycles / Hour" value={fmt0.format(selectedPreset.cyclesPerHour)} helper="Exact sheet value" />
-                  <DetailBox label="LF / Hour" value={fmt0.format(selectedPreset.lfPerHour)} helper="Exact sheet value" />
+                  <DetailBox label="LF / Hour" value={fmt0.format(selectedPreset.lfPerHour)} helper="Approx. 10% downtime baseline" />
                 </div>
                 <div className="rounded-2xl border border-sky-200 bg-white p-4 text-sm text-slate-600">
-                  Baseline LF/day from the sheet for this mode is <span className="font-semibold text-slate-900">{fmt0.format(selectedPreset.lfPerDay)}</span>, based on <span className="font-semibold text-slate-900">{fmt1.format(BASE_RUN_HOURS_PER_DAY)}</span> runtime hours per day.
+                  Baseline LF/day from the provided sheet for this mode is <span className="font-semibold text-slate-900">{fmt0.format(selectedPreset.lfPerDay)}</span>, based on <span className="font-semibold text-slate-900">{fmt1.format(BASE_RUN_HOURS_PER_DAY)}</span> runtime hours per day and roughly <span className="font-semibold text-slate-900">10%</span> downtime.
                 </div>
               </div>
             </Card>
 
-            <Card title="Executive Planning Inputs">
+            <Card title="Scenario Planning Inputs">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <NumberInput label="Operating Days / Year" value={operatingDaysPerYear} onChange={setOperatingDaysPerYear} />
-                <NumberInput label="Run Hours / Day" value={runHoursPerDay} onChange={setRunHoursPerDay} step={0.25} />
                 <NumberInput label="Headcount" value={headcount} onChange={setHeadcount} />
                 <SelectInput
                   label="Overtime / Week"
@@ -291,17 +306,17 @@ export default function DynamaxProductionScenarioTool() {
                   max={100}
                   step={5}
                   suffix="%"
-                  helper="100% keeps the selected preset at full value. Lower settings scale the validated preset down."
+                  helper="100% keeps the validated sheet capacity at full value. Lower settings scale it down."
                 />
                 <RangeInput
-                  label="Downtime"
+                  label="Projected Downtime"
                   value={downtimePct}
                   onChange={setDowntimePct}
                   min={0}
                   max={30}
                   step={1}
                   suffix="%"
-                  helper="10% is neutral because the provided runtime sheet already bakes in normal daily losses around that level."
+                  helper="10% is neutral because the validated sheet values already reflect about that level."
                 />
                 <div className="rounded-2xl border border-sky-200 bg-white p-4 text-sm text-slate-600">
                   Required headcount at the selected utilization is <span className="font-semibold text-slate-900">{fmt1.format(results.requiredHeadcount)}</span>. Current staffing support factor is <span className="font-semibold text-slate-900">{fmt1.format(results.staffingFactor * 100)}%</span>.
@@ -312,9 +327,9 @@ export default function DynamaxProductionScenarioTool() {
 
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard title="Adjusted LF / Hour" value={fmt0.format(results.selectedScenario.adjustedLfPerHour)} subtitle="Validated preset scaled by scenario multipliers" />
-              <MetricCard title="Adjusted LF / Day" value={fmt0.format(results.selectedScenario.adjustedLfPerDay)} subtitle={`${fmt1.format(results.effectiveRunHoursPerDay)} effective runtime hrs/day`} />
-              <MetricCard title="Adjusted Annual LF" value={fmt0.format(results.selectedScenario.adjustedAnnualLF)} subtitle={`${fmt0.format(operatingDaysPerYear)} operating days/year`} />
+              <MetricCard title="Actual LF / Day" value={fmt0.format(results.actualCurrentDailyLF)} subtitle="Real 2026 YTD average" />
+              <MetricCard title="Projected LF / Day" value={fmt0.format(results.adjustedLfPerDay)} subtitle={`${fmt1.format(results.effectiveRunHoursPerDay)} effective runtime hrs/day`} />
+              <MetricCard title="Projected Annual LF" value={fmt0.format(results.adjustedAnnualLF)} subtitle={`${fmt0.format(operatingDaysPerYear)} operating days/year`} />
               <MetricCard title="Last Year Actual LF" value={fmt0.format(lastYearLF)} subtitle={`${fmt1.format(results.annualVsLastYearPct)}% of last year actual`} />
             </div>
 
@@ -330,45 +345,44 @@ export default function DynamaxProductionScenarioTool() {
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-                <DetailBox label="Validated LF / Day" value={fmt0.format(selectedPreset.lfPerDay)} helper="Exact sheet baseline" />
-                <DetailBox label="Adjusted LF / Day" value={fmt0.format(results.selectedScenario.adjustedLfPerDay)} helper="Scenario output" />
-                <DetailBox label="Gap to Daily Goal" value={fmt0.format(results.gapToDailyGoal)} helper={`${results.gapToDailyGoal >= 0 ? "Ahead of" : "Short of"} ${fmt0.format(dailyGoalLF)}`} />
+                <DetailBox label="Actual LF / Day" value={fmt0.format(results.actualCurrentDailyLF)} helper="Current 2026 average" />
+                <DetailBox label="Projected LF / Day" value={fmt0.format(results.adjustedLfPerDay)} helper="Selected scenario output" />
+                <DetailBox label="Improvement / Day" value={fmt0.format(results.improvementVsActualPerDay)} helper="Projected vs actual current pace" />
                 <DetailBox label="Last Year Actual" value={fmt0.format(lastYearLF)} helper="2025 actual output" />
                 <DetailBox label="Projection vs Last Year" value={fmt0.format(results.gapToLastYear)} helper={`${results.gapToLastYear >= 0 ? "Above" : "Below"} last year`} />
                 <DetailBox label="OT Added / Day" value={fmt1.format(results.overtimePerDay)} helper={`${overtimeHoursPerWeek} hours/week selected`} />
               </div>
             </Card>
 
-            <Card title="Current vs Selected Comparison">
+            <Card title="Actual vs Capacity vs Projection">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500">
                       <th className="pb-3 pr-4 font-medium">Metric</th>
-                      <th className="pb-3 pr-4 font-medium">Current</th>
-                      <th className="pb-3 pr-4 font-medium">Selected</th>
+                      <th className="pb-3 pr-4 font-medium">Actual Today</th>
+                      <th className="pb-3 pr-4 font-medium">Validated Capacity</th>
+                      <th className="pb-3 pr-4 font-medium">Projected Scenario</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-800">
                     <tr className="border-b border-slate-100">
-                      <td className="py-3 pr-4">Validated LF / Hour</td>
-                      <td className="py-3 pr-4">{fmt0.format(currentPreset.lfPerHour)}</td>
+                      <td className="py-3 pr-4">LF / Hour</td>
+                      <td className="py-3 pr-4">{fmt1.format(results.actualCurrentLfPerHour)}</td>
                       <td className="py-3 pr-4">{fmt0.format(selectedPreset.lfPerHour)}</td>
+                      <td className="py-3 pr-4">{fmt0.format(results.adjustedLfPerHour)}</td>
                     </tr>
                     <tr className="border-b border-slate-100">
-                      <td className="py-3 pr-4">Validated LF / Day</td>
-                      <td className="py-3 pr-4">{fmt0.format(currentPreset.lfPerDay)}</td>
+                      <td className="py-3 pr-4">LF / Day</td>
+                      <td className="py-3 pr-4">{fmt0.format(results.actualCurrentDailyLF)}</td>
                       <td className="py-3 pr-4">{fmt0.format(selectedPreset.lfPerDay)}</td>
-                    </tr>
-                    <tr className="border-b border-slate-100">
-                      <td className="py-3 pr-4">Adjusted LF / Day</td>
-                      <td className="py-3 pr-4">{fmt0.format(results.currentScenario.adjustedLfPerDay)}</td>
-                      <td className="py-3 pr-4">{fmt0.format(results.selectedScenario.adjustedLfPerDay)}</td>
+                      <td className="py-3 pr-4">{fmt0.format(results.adjustedLfPerDay)}</td>
                     </tr>
                     <tr>
-                      <td className="py-3 pr-4">Adjusted Annual LF</td>
-                      <td className="py-3 pr-4">{fmt0.format(results.currentScenario.adjustedAnnualLF)}</td>
-                      <td className="py-3 pr-4">{fmt0.format(results.selectedScenario.adjustedAnnualLF)}</td>
+                      <td className="py-3 pr-4">Annual LF</td>
+                      <td className="py-3 pr-4">{fmt0.format(results.actualCurrentAnnualLF)}</td>
+                      <td className="py-3 pr-4">{fmt0.format(selectedPreset.lfPerDay * operatingDaysPerYear)}</td>
+                      <td className="py-3 pr-4">{fmt0.format(results.adjustedAnnualLF)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -377,10 +391,10 @@ export default function DynamaxProductionScenarioTool() {
 
             <Card title="Leadership Notes">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <DetailBox label="Presets" value="Validated" helper="LF/hour and LF/day come directly from the provided cross-cut data table." />
-                <DetailBox label="Confidence" value="High" helper="Scenario output is anchored to exact sheet presets instead of pure cycle-time math." />
-                <DetailBox label="Risk Area" value="Staffing" helper="Headcount below the required threshold reduces scenario output automatically." />
-                <DetailBox label="Best Use" value="Decision Support" helper="Ideal for showing mode changes, projection vs target, and projection vs last year." />
+                <DetailBox label="Actual State" value="4,264 LF/day" helper="Based on 302,720 LF over 71 working days." />
+                <DetailBox label="Validated Baseline" value="Sheet-Based" helper="LF/hour and LF/day come directly from the provided production table." />
+                <DetailBox label="Main Constraint" value="Downtime" helper="Current actual downtime is running about 45%, well above the ~10% used in the capacity sheet." />
+                <DetailBox label="Best Use" value="Decision Support" helper="Shows actual current pace, validated process capacity, and projected output under improved conditions." />
               </div>
             </Card>
           </div>
